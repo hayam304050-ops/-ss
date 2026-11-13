@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بصائر المحبة | لعبة تدبر الآيات القرآنية</title>
+    
+    <!-- استيراد خط القاهرة والأميري من خطوط جوجل للجمال والوضوح القرآني -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- استيراد مكتبة Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- استيراد مكتبة Confetti للاحتفالات والجوائز -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- إعدادات الألوان والخطوط المخصصة في Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                        quran: ['Amiri', 'serif'],
+                    },
+                    colors: {
+                        emerald: {
+                            850: '#064e3b',
+                            950: '#022c22',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        },
+                        cream: {
+                            50: '#fdfbf7',
+                            100: '#f8f4ea',
+                            200: '#efe7d6',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* تنسيقات مخصصة للحركات والتأثيرات البصرية */
+        body {
+            background-color: #fdfbf7;
+            background-image: radial-gradient(#d9770615 1px, transparent 1px), radial-gradient(#065f4610 1px, #fdfbf7 1px);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+        }
+
+        /* حركة اهتزاز البطاقة عند الإجابة الخاطئة */
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            15%, 45%, 75% { transform: translateX(-8px); }
+            30%, 60%, 90% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shakeError 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* حركة نبض لطيفة للأوسمة والجوائز */
+        @keyframes floatPrize {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-6px) scale(1.03); }
+        }
+        .animate-float {
+            animation: floatPrize 3s ease-in-out infinite;
+        }
+
+        /* حركة ظهور تدريجي */
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-enter {
+            animation: fadeInScale 0.4s ease-out forwards;
+        }
+
+        /* تنسيق خاص للنص القرآني */
+        .quran-text {
+            font-family: 'Amiri', serif;
+            line-height: 2.1;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between selection:bg-emerald-200 selection:text-emerald-900">
+
+    <!-- الشريط العلوي (Header) -->
+    <header class="bg-gradient-to-l from-emerald-900 via-emerald-800 to-teal-900 text-white shadow-lg border-b-4 border-gold-500 sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <!-- الشعار والعنوان -->
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-md text-emerald-950 font-bold text-2xl border border-gold-200">
+                    ۞
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-cream-50">بصائر المحبة</h1>
+                    <p class="text-xs text-emerald-200 hidden sm:block">تدبر صفات المحبوبين والمبغوضين في القرآن الكريم</p>
+                </div>
+            </div>
+
+            <!-- شريط الإحصائيات والأزرار السريعة -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- مؤشر النقاط -->
+                <div id="header-stats" class="hidden flex items-center gap-2 sm:gap-3 bg-emerald-950/60 px-3 py-1.5 rounded-2xl border border-emerald-700/50">
+                    <div class="flex items-center gap-1.5" title="النقاط المكتسبة">
+                        <span class="text-gold-400 text-lg">★</span>
+                        <span id="score-display" class="font-bold text-gold-400 text-base sm:text-lg">0</span>
+                    </div>
+                    <div class="h-4 w-px bg-emerald-700"></div>
+                    <div class="flex items-center gap-1" title="سلسلة الإجابات الصحيحة المتتالية">
+                        <span class="text-orange-400 text-base">🔥</span>
+                        <span id="streak-display" class="font-bold text-white text-sm sm:text-base">0</span>
+                    </div>
+                </div>
+
+                <!-- زر عرض خزانة الجوائز -->
+                <button onclick="toggleBadgesModal(true)" class="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 active:scale-95 transition px-3 py-2 rounded-xl text-sm font-semibold border border-white/15" title="خزانة الأوسمة والجوائز">
+                    <span>🏆</span>
+                    <span class="hidden md:inline">الأوسمة</span>
+                    <span id="badges-count-badge" class="bg-gold-500 text-emerald-950 text-xs font-extrabold px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+
+                <!-- زر كتم / تشغيل الصوت -->
+                <button id="sound-toggle-btn" onclick="toggleSound()" class="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 transition border border-white/15" title="تشغيل / إيقاف المؤثرات الصوتية" aria-label="تبديل الصوت">
+                    <span id="sound-icon" class="text-lg">🔊</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="flex-grow flex items-center justify-center p-4 sm:p-6">
+        <div class="w-full max-w-3xl">
+
+            <!-- 1. شاشة البداية (Start Screen) -->
+            <section id="start-screen" class="bg-white rounded-3xl shadow-xl border border-cream-200 overflow-hidden animate-enter">
+                <div class="bg-gradient-to-bl from-emerald-800 to-teal-900 p-6 sm:p-10 text-center text-white relative overflow-hidden">
+                    <div class="inline-block px-4 py-1 rounded-full bg-gold-500/20 border border-gold-400/40 text-gold-300 text-xs sm:text-sm font-bold mb-4">
+                        رحلة تدبر وتفكر لطلاب العلم
+                    </div>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold mb-3 leading-snug">
+                        من يحبهم الله.. ومن لا يحبهم؟
+                    </h2>
+                    <p class="text-emerald-100 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+                        رسم القرآن الكريم ميزاناً دقيقاً للأخلاق والأعمال؛ فذكر صفاتٍ يحبها الله وأهلها، وصفاتٍ لا يحبها الله. اختبر معرفتك القرآنية وتدبر الآيات الكريمة في جولات تفاعلية ممتعة.
+                    </p>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6">
+                    <!-- بطاقات توضيحية لمراحل اللعبة -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-cream-50 p-4 rounded-2xl border border-cream-200 flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xl shrink-0">
+                                ١
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-emerald-950 text-base">مرحلة الميزان القرآني</h3>
+                                <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                                    صنّف الصفة أو الفئة المذكورة في القرآن: هل وردت في سياق <span class="text-emerald-700 font-bold">"إن الله يحب..."</span> أم <span class="text-rose-700 font-bold">"إن الله لا يحب..."</span>؟
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-cream-50 p-4 rounded-2xl border border-cream-200 flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xl shrink-0">
+                                ٢
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-emerald-950 text-base">مرحلة إتمام الآيات</h3>
+                                <p class="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                                    أكمل نص الآية القرآنية بالكلمة الصحيحة، وتعرف على اسم السورة ورقم الآية والمعنى التربوي المستفاد.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- اختيار طول الجلسة -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <label class="block text-sm font-bold text-slate-700 mb-3 text-center">اختر عدد الأسئلة في هذه الجولة:</label>
+                        <div class="grid grid-cols-3 gap-3 max-w-md mx-auto">
+                            <button type="button" onclick="selectQuestionCount(8)" id="count-btn-8" class="count-btn py-2.5 px-3 rounded-xl font-bold text-sm border-2 transition border-slate-200 bg-white text-slate-700 hover:border-emerald-400">
+                                ٨ أسئلة (سريعة)
+                            </button>
+                            <button type="button" onclick="selectQuestionCount(12)" id="count-btn-12" class="count-btn py-2.5 px-3 rounded-xl font-bold text-sm border-2 transition border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm">
+                                ١٢ سؤالاً (متوازنة)
+                            </button>
+                            <button type="button" onclick="selectQuestionCount(20)" id="count-btn-20" class="count-btn py-2.5 px-3 rounded-xl font-bold text-sm border-2 transition border-slate-200 bg-white text-slate-700 hover:border-emerald-400">
+                                ٢٠ سؤالاً (شاملة)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- زر البدء -->
+                    <div class="text-center pt-2">
+                        <button onclick="startGame()" class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-l from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold text-lg shadow-lg shadow-emerald-900/20 hover:shadow-xl active:scale-95 transition flex items-center justify-center gap-3 mx-auto">
+                            <span>ابدأ رحلة التدبر الآن</span>
+                            <span class="text-xl">←</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. شاشة اللعب التفاعلية (Game Screen) -->
+            <section id="game-screen" class="hidden space-y-5">
+                
+                <!-- شريط التقدم والمرحلة -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-cream-200">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5 text-xs sm:text-sm font-bold">
+                        <span id="stage-badge" class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                            المرحلة الأولى: الميزان القرآني
+                        </span>
+                        <span class="text-slate-600">
+                            السؤال <span id="current-q-num" class="text-emerald-700 font-extrabold">1</span> من <span id="total-q-num">12</span>
+                        </span>
+                    </div>
+                    <!-- شريط التقدم المرئي -->
+                    <div class="w-full h-3 bg-cream-200 rounded-full overflow-hidden p-0.5">
+                        <div id="progress-bar" class="h-full bg-gradient-to-l from-gold-500 to-emerald-600 rounded-full transition-all duration-500" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <!-- بطاقة السؤال الرئيسية -->
+                <div id="question-card" class="bg-white rounded-3xl shadow-xl border-2 border-cream-200 p-6 sm:p-8 transition-colors duration-300 relative">
+                    
+                    <!-- ترويسة نوع السؤال -->
+                    <div class="text-center mb-5">
+                        <span id="question-instruction" class="inline-block text-xs sm:text-sm font-bold text-amber-800 bg-amber-50 border border-amber-200/80 px-4 py-1.5 rounded-full">
+                            كيف وردت هذه الفئة في القرآن الكريم؟
+                        </span>
+                    </div>
+
+                    <!-- محتوى السؤال (الصفة أو الآية الناقصة) -->
+                    <div id="question-prompt-box" class="bg-cream-50 border border-cream-200 rounded-2xl p-6 sm:p-8 text-center mb-6 shadow-inner">
+                        <p id="question-main-text" class="quran-text text-2xl sm:text-4xl font-bold text-emerald-950">
+                            ﴿ ... ﴾
+                        </p>
+                        <p id="question-sub-hint" class="text-xs sm:text-sm text-slate-500 mt-3 font-medium hidden"></p>
+                    </div>
+
+                    <!-- منطقة الخيارات (تتغير ديناميكياً حسب المرحلة) -->
+                    <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- يتم توليد الأزرار هنا عبر JavaScript -->
+                    </div>
+
+                    <!-- لوحة التغذية الراجعة (التحذير عند الخطأ أو التهنئة عند الصواب) -->
+                    <div id="feedback-panel" class="hidden mt-6 rounded-2xl p-5 border-2 animate-enter">
+                        <div class="flex items-start gap-3.5">
+                            <div id="feedback-icon" class="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                                ✓
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <h4 id="feedback-title" class="font-extrabold text-lg">أحسنت! إجابة صحيحة</h4>
+                                    <span id="verse-reference" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/80 border">
+                                        سورة البقرة - آية 195
+                                    </span>
+                                </div>
+                                
+                                <!-- نص الآية الكاملة للتدبر -->
+                                <p id="full-verse-text" class="quran-text text-xl sm:text-2xl font-bold mt-3 p-3.5 rounded-xl bg-white/90 border leading-loose text-slate-900">
+                                </p>
+                                
+                                <!-- فائدة وتفسير مختصر -->
+                                <p id="verse-reflection" class="text-xs sm:text-sm mt-3 leading-relaxed font-medium">
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- زر الانتقال للسؤال التالي -->
+                        <div class="mt-5 text-left">
+                            <button id="next-btn" onclick="nextQuestion()" class="w-full sm:w-auto px-7 py-3 rounded-xl font-bold text-white shadow-md active:scale-95 transition flex items-center justify-center gap-2 mr-auto">
+                                <span>السؤال التالي</span>
+                                <span>←</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 3. شاشة النتائج النهائية والجوائز (End Screen) -->
+            <section id="end-screen" class="hidden bg-white rounded-3xl shadow-xl border border-cream-200 overflow-hidden animate-enter">
+                <div class="bg-gradient-to-bl from-emerald-900 via-emerald-800 to-teal-900 p-8 text-center text-white relative">
+                    <div id="final-medal-icon" class="w-24 h-24 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-gold-400 to-amber-600 flex items-center justify-center text-5xl shadow-xl border-4 border-gold-200 animate-float">
+                        👑
+                    </div>
+                    <p class="text-gold-300 font-bold text-sm mb-1">الوسام المستحق في هذه الجولة</p>
+                    <h2 id="final-rank-title" class="text-2xl sm:text-3xl font-extrabold text-white mb-2">
+                        وسام التميز والتدبر القرآني
+                    </h2>
+                    <p id="final-rank-desc" class="text-emerald-100 text-sm max-w-md mx-auto">
+                        ما شاء الله! أظهرت فهماً عميقاً واستحضاراً رائعاً لآيات المحبة في كتاب الله.
+                    </p>
+                </div>
+
+                <div class="p-6 sm:p-8 space-y-6">
+                    <!-- ملخص الأرقام -->
+                    <div class="grid grid-cols-3 gap-3 sm:gap-4 text-center">
+                        <div class="bg-cream-50 p-4 rounded-2xl border border-cream-200">
+                            <span class="block text-xs text-slate-500 font-bold mb-1">مجموع النقاط</span>
+                            <span id="final-score" class="text-2xl sm:text-3xl font-extrabold text-gold-600">0</span>
+                        </div>
+                        <div class="bg-cream-50 p-4 rounded-2xl border border-cream-200">
+                            <span class="block text-xs text-slate-500 font-bold mb-1">نسبة الإتقان</span>
+                            <span id="final-accuracy" class="text-2xl sm:text-3xl font-extrabold text-emerald-700">0%</span>
+                        </div>
+                        <div class="bg-cream-50 p-4 rounded-2xl border border-cream-200">
+                            <span class="block text-xs text-slate-500 font-bold mb-1">أعلى تتابع</span>
+                            <span id="final-best-streak" class="text-2xl sm:text-3xl font-extrabold text-orange-600">0</span>
+                        </div>
+                    </div>
+
+                    <!-- قسم مراجعة الآيات التي تمت دراستها -->
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base mb-3 flex items-center gap-2">
+                            <span>📖</span>
+                            <span>حصاد التدبر (الآيات التي مررت بها في هذه الجولة):</span>
+                        </h3>
+                        <div id="review-list" class="max-h-64 overflow-y-auto space-y-2.5 pr-1">
+                            <!-- يتم ملؤها تلقائياً -->
+                        </div>
+                    </div>
+
+                    <!-- أزرار التحكم النهائية -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button onclick="resetToStart()" class="flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-l from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold shadow-lg active:scale-95 transition">
+                            🔄 جولة جديدة بأسئلة متجددة
+                        </button>
+                        <button onclick="toggleBadgesModal(true)" class="py-3.5 px-6 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold border border-amber-300 active:scale-95 transition">
+                            🏆 عرض جميع الأوسمة
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- تذييل الصفحة (Footer) -->
+    <footer class="text-center py-4 px-4 text-xs text-slate-500 border-t border-cream-200/80 bg-white/50">
+        <p>تطبيق "بصائر المحبة" التعليمي — صُمم بعناية لتعزيز التدبر القرآني والعمل بالأخلاق الفاضلة</p>
+    </footer>
+
+    <!-- نافذة خزانة الأوسمة والجوائز (Modal) -->
+    <div id="badges-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-cream-200 overflow-hidden animate-enter">
+            <div class="bg-gradient-to-l from-amber-600 to-gold-500 p-5 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <span class="text-2xl">🏆</span>
+                    <h3 class="font-extrabold text-lg">خزانة الأوسمة والجوائز التشجيعية</h3>
+                </div>
+                <button onclick="toggleBadgesModal(false)" class="w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 flex items-center justify-center font-bold">✕</button>
+            </div>
+            <div class="p-5 sm:p-6 max-h-[75vh] overflow-y-auto space-y-3" id="badges-list-container">
+                <!-- يتم عرض الأوسمة هنا -->
+            </div>
+            <div class="p-4 bg-slate-50 border-t text-center">
+                <button onclick="toggleBadgesModal(false)" class="px-6 py-2 rounded-xl bg-slate-800 text-white font-bold text-sm hover:bg-slate-700 transition">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- إشعار منبثق (Toast) عند فتح وسام جديد -->
+    <div id="achievement-toast" class="fixed bottom-5 left-5 right-5 sm:left-auto sm:right-6 sm:w-80 bg-emerald-950 text-white p-4 rounded-2xl shadow-2xl border-2 border-gold-400 z-50 transform translate-y-32 opacity-0 transition-all duration-500 flex items-center gap-3.5 pointer-events-none">
+        <div id="toast-icon" class="w-12 h-12 rounded-xl bg-gold-500 text-emerald-950 flex items-center justify-center text-2xl shrink-0 font-bold">
+            🏅
+        </div>
+        <div>
+            <p class="text-xs text-gold-400 font-bold">مبارك! حصلت على وسام جديد</p>
+            <h4 id="toast-title" class="font-extrabold text-base">وسام المتدبر</h4>
+        </div>
+    </div>
+
+    <!-- المنطق البرمجي الكامل للتطبيق -->
+    <script>
+        /**
+         * قاعدة بيانات الآيات القرآنية الدقيقة بالتشكيل
+         * type: 'loves' (إن الله يحب) | 'hates' (إن الله لا يحب)
+         */
+        const QURAN_DATA = [
+            // --- أولاً: آيات "إن الله يحب..." ---
+            {
+                id: 1,
+                type: 'loves',
+                categoryText: 'الْمُحْسِنِينَ',
+                missingWord: 'الْمُحْسِنِينَ',
+                distractors: ['الْمُسْرِفِينَ', 'الْمُعْتَدِينَ', 'الظَّالِمِينَ'],
+                verseWithBlank: '﴿ وَأَنفِقُوا فِي سَبِيلِ اللَّهِ وَلَا تُلْقُوا بِأَيْدِيكُمْ إِلَى التَّهْلُكَةِ ۛ وَأَحْسِنُوا ۛ إِنَّ اللَّهَ يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَأَنفِقُوا فِي سَبِيلِ اللَّهِ وَلَا تُلْقُوا بِأَيْدِيكُمْ إِلَى التَّهْلُكَةِ ۛ وَأَحْسِنُوا ۛ إِنَّ اللَّهَ يُحِبُّ الْمُحْسِنِينَ ﴾',
+                surah: 'سورة البقرة - آية ١٩٥',
+                reflection: 'الإحسان هو إتقان العمل ومراقبة الله في السر والعلن، وبذل الخير للناس ابتغاء مرضاة الله.'
+            },
+            {
+                id: 2,
+                type: 'loves',
+                categoryText: 'التَّوَّابِينَ وَالْمُتَطَهِّرِينَ',
+                missingWord: 'التَّوَّابِينَ',
+                distractors: ['الْمُتَكَبِّرِينَ', 'الْخَائِنِينَ', 'الْفَرِحِينَ'],
+                verseWithBlank: '﴿ إِنَّ اللَّهَ يُحِبُّ .......... وَيُحِبُّ الْمُتَطَهِّرِينَ ﴾',
+                fullVerse: '﴿ إِنَّ اللَّهَ يُحِبُّ التَّوَّابِينَ وَيُحِبُّ الْمُتَطَهِّرِينَ ﴾',
+                surah: 'سورة البقرة - آية ٢٢٢',
+                reflection: 'يجمع الله في محبته بين طهارة الباطن بالتوبة والاستغفار الدائم، وطهارة الظاهر بالنظافة والوضوء.'
+            },
+            {
+                id: 3,
+                type: 'loves',
+                categoryText: 'الْمُتَّقِينَ',
+                missingWord: 'الْمُتَّقِينَ',
+                distractors: ['الْمُفْسِدِينَ', 'الْمُعْتَدِينَ', 'الْكَافِرِينَ'],
+                verseWithBlank: '﴿ بَلَىٰ مَنْ أَوْفَىٰ بِعَهْدِهِ وَاتَّقَىٰ فَإِنَّ اللَّهَ يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ بَلَىٰ مَنْ أَوْفَىٰ بِعَهْدِهِ وَاتَّقَىٰ فَإِنَّ اللَّهَ يُحِبُّ الْمُتَّقِينَ ﴾',
+                surah: 'سورة آل عمران - آية ٧٦',
+                reflection: 'الوفاء بالعهود وتقوى الله في المعاملات طريق مباشر لنيل محبة الله تعالى.'
+            },
+            {
+                id: 4,
+                type: 'loves',
+                categoryText: 'الصَّابِرِينَ',
+                missingWord: 'الصَّابِرِينَ',
+                distractors: ['الْمُسْرِفِينَ', 'الْمُخْتَالِينَ', 'الظَّالِمِينَ'],
+                verseWithBlank: '﴿ فَمَا وَهَنُوا لِمَا أَصَابَهُمْ فِي سَبِيلِ اللَّهِ وَمَا ضَعُفُوا وَمَا اسْتَكَانُوا ۗ وَاللَّهُ يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ فَمَا وَهَنُوا لِمَا أَصَابَهُمْ فِي سَبِيلِ اللَّهِ وَمَا ضَعُفُوا وَمَا اسْتَكَانُوا ۗ وَاللَّهُ يُحِبُّ الصَّابِرِينَ ﴾',
+                surah: 'سورة آل عمران - آية ١٤٦',
+                reflection: 'الصبر والثبات عند الشدائد وعدم الاستسلام لليأس من أعظم الصفات التي يحبها الله في المؤمن.'
+            },
+            {
+                id: 5,
+                type: 'loves',
+                categoryText: 'الْمُتَوَكِّلِينَ',
+                missingWord: 'الْمُتَوَكِّلِينَ',
+                distractors: ['الْخَائِنِينَ', 'الْمُتَكَبِّرِينَ', 'الْمُبَذِّرِينَ'],
+                verseWithBlank: '﴿ فَإِذَا عَزَمْتَ فَتَوَكَّلْ عَلَى اللَّهِ ۚ إِنَّ اللَّهَ يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ فَإِذَا عَزَمْتَ فَتَوَكَّلْ عَلَى اللَّهِ ۚ إِنَّ اللَّهَ يُحِبُّ الْمُتَوَكِّلِينَ ﴾',
+                surah: 'سورة آل عمران - آية ١٥٩',
+                reflection: 'التوكل الحقيقي يجمع بين الأخذ بالأسباب والعزم، ثم تفويض النتائج إلى الله بقلب مطمئن.'
+            },
+            {
+                id: 6,
+                type: 'loves',
+                categoryText: 'الْمُقْسِطِينَ (العادلين)',
+                missingWord: 'الْمُقْسِطِينَ',
+                distractors: ['الْمُعْتَدِينَ', 'الظَّالِمِينَ', 'الْمُفْسِدِينَ'],
+                verseWithBlank: '﴿ وَإِنْ حَكَمْتَ فَاحْكُم بَيْنَهُم بِالْقِسْطِ ۚ إِنَّ اللَّهَ يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَإِنْ حَكَمْتَ فَاحْكُم بَيْنَهُم بِالْقِسْطِ ۚ إِنَّ اللَّهَ يُحِبُّ الْمُقْسِطِينَ ﴾',
+                surah: 'سورة المائدة - آية ٤٢',
+                reflection: 'القسط هو العدل التام والإنصاف في القول والحكم، حتى مع المخالفين.'
+            },
+            {
+                id: 7,
+                type: 'loves',
+                categoryText: 'الْمُطَّهِّرِينَ',
+                missingWord: 'الْمُطَّهِّرِينَ',
+                distractors: ['الْمُسْرِفِينَ', 'الْخَائِنِينَ', 'الْفَرِحِينَ'],
+                verseWithBlank: '﴿ فِيهِ رِجَالٌ يُحِبُّونَ أَن يَتَطَهَّرُوا ۚ وَاللَّهُ يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ فِيهِ رِجَالٌ يُحِبُّونَ أَن يَتَطَهَّرُوا ۚ وَاللَّهُ يُحِبُّ الْمُطَّهِّرِينَ ﴾',
+                surah: 'سورة التوبة - آية ١٠٨',
+                reflection: 'نزلت في أهل قباء الذين حرصوا على الطهارة الحسية والمعنوية، فأثنى الله عليهم.'
+            },
+            {
+                id: 8,
+                type: 'loves',
+                categoryText: 'الَّذِينَ يُقَاتِلُونَ فِي سَبِيلِهِ صَفًّا',
+                missingWord: 'صَفًّا',
+                distractors: ['فُرَادَىٰ', 'مُتَفَرِّقِينَ', 'مُسْرِفِينَ'],
+                verseWithBlank: '﴿ إِنَّ اللَّهَ يُحِبُّ الَّذِينَ يُقَاتِلُونَ فِي سَبِيلِهِ .......... كَأَنَّهُم بُنْيَانٌ مَّرْصُوصٌ ﴾',
+                fullVerse: '﴿ إِنَّ اللَّهَ يُحِبُّ الَّذِينَ يُقَاتِلُونَ فِي سَبِيلِهِ صَفًّا كَأَنَّهُم بُنْيَانٌ مَّرْصُوصٌ ﴾',
+                surah: 'سورة الصف - آية ٤',
+                reflection: 'يحب الله وحدة الصف والتكاتف والعمل الجماعي المنظم في نصرة الحق.'
+            },
+
+            // --- ثانياً: آيات "إن الله لا يحب..." ---
+            {
+                id: 9,
+                type: 'hates',
+                categoryText: 'الْمُعْتَدِينَ',
+                missingWord: 'الْمُعْتَدِينَ',
+                distractors: ['الْمُحْسِنِينَ', 'الْمُقْسِطِينَ', 'الصَّابِرِينَ'],
+                verseWithBlank: '﴿ وَقَاتِلُوا فِي سَبِيلِ اللَّهِ الَّذِينَ يُقَاتِلُونَكُمْ وَلَا تَعْتَدُوا ۚ إِنَّ اللَّهَ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَقَاتِلُوا فِي سَبِيلِ اللَّهِ الَّذِينَ يُقَاتِلُونَكُمْ وَلَا تَعْتَدُوا ۚ إِنَّ اللَّهَ لَا يُحِبُّ الْمُعْتَدِينَ ﴾',
+                surah: 'سورة البقرة - آية ١٩٠',
+                reflection: 'نهى الإسلام عن تجاوز الحدود والظلم والعدوان على الأبرياء حتى في أوقات النزاع.'
+            },
+            {
+                id: 10,
+                type: 'hates',
+                categoryText: 'كُلَّ كَفَّارٍ أَثِيمٍ',
+                missingWord: 'كَفَّارٍ أَثِيمٍ',
+                distractors: ['مُحْسِنٍ كَرِيمٍ', 'تَوَّابٍ حَلِيمٍ', 'صَابِرٍ شَكُورٍ'],
+                verseWithBlank: '﴿ يَمْحَقُ اللَّهُ الرِّبَا وَيُرْبِي الصَّدَقَاتِ ۗ وَاللَّهُ لَا يُحِبُّ كُلَّ .......... ﴾',
+                fullVerse: '﴿ يَمْحَقُ اللَّهُ الرِّبَا وَيُرْبِي الصَّدَقَاتِ ۗ وَاللَّهُ لَا يُحِبُّ كُلَّ كَفَّارٍ أَثِيمٍ ﴾',
+                surah: 'سورة البقرة - آية ٢٧٦',
+                reflection: 'الكفّار الأثيم هو الجاحد لنعم الله المصرّ على أكل أموال الناس بالباطل والربا.'
+            },
+            {
+                id: 11,
+                type: 'hates',
+                categoryText: 'الظَّالِمِينَ',
+                missingWord: 'الظَّالِمِينَ',
+                distractors: ['الْمُتَّقِينَ', 'الْمُقْسِطِينَ', 'التَّوَّابِينَ'],
+                verseWithBlank: '﴿ وَأَمَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ فَيُوَفِّيهِمْ أُجُورَهُمْ ۗ وَاللَّهُ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَأَمَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ فَيُوَفِّيهِمْ أُجُورَهُمْ ۗ وَاللَّهُ لَا يُحِبُّ الظَّالِمِينَ ﴾',
+                surah: 'سورة آل عمران - آية ٥٧',
+                reflection: 'الظلم ظلمات، والله منزه عن الظلم ويبغض الظالمين المعتدين على حقوق العباد.'
+            },
+            {
+                id: 12,
+                type: 'hates',
+                categoryText: 'مَن كَانَ مُخْتَالًا فَخُورًا',
+                missingWord: 'مُخْتَالًا فَخُورًا',
+                distractors: ['مُتَوَكِّلًا صَبُورًا', 'مُحْسِنًا شَكُورًا', 'تَوَّابًا طَهُورًا'],
+                verseWithBlank: '﴿ إِنَّ اللَّهَ لَا يُحِبُّ مَن كَانَ .......... ﴾',
+                fullVerse: '﴿ إِنَّ اللَّهَ لَا يُحِبُّ مَن كَانَ مُخْتَالًا فَخُورًا ﴾',
+                surah: 'سورة النساء - آية ٣٦',
+                reflection: 'المختال هو المتكبر في مشيته وهيئته، والفخور هو المتعالي على الناس بلسانه ونسبه وماله.'
+            },
+            {
+                id: 13,
+                type: 'hates',
+                categoryText: 'مَن كَانَ خَوَّانًا أَثِيمًا',
+                missingWord: 'خَوَّانًا أَثِيمًا',
+                distractors: ['أَمِينًا حَكِيمًا', 'صَادِقًا رَحِيمًا', 'مُقْسِطًا عَظِيمًا'],
+                verseWithBlank: '﴿ وَلَا تُجَادِلْ عَنِ الَّذِينَ يَخْتَانُونَ أَنفُسَهُمْ ۚ إِنَّ اللَّهَ لَا يُحِبُّ مَن كَانَ .......... ﴾',
+                fullVerse: '﴿ وَلَا تُجَادِلْ عَنِ الَّذِينَ يَخْتَانُونَ أَنفُسَهُمْ ۚ إِنَّ اللَّهَ لَا يُحِبُّ مَن كَانَ خَوَّانًا أَثِيمًا ﴾',
+                surah: 'سورة النساء - آية ١٠٧',
+                reflection: 'الخيانة للأمانات والغدر بالناس من أشد الصفات المذمومة التي تباعد العبد عن محبة الله.'
+            },
+            {
+                id: 14,
+                type: 'hates',
+                categoryText: 'الْجَهْرَ بِالسُّوءِ مِنَ الْقَوْلِ إِلَّا مَن ظُلِمَ',
+                missingWord: 'الْجَهْرَ بِالسُّوءِ',
+                distractors: ['الْقَوْلَ الْحَسَنَ', 'الْإِصْلَاحَ بَيْنَ النَّاسِ', 'الْعَفْوَ عَنِ النَّاسِ'],
+                verseWithBlank: '﴿ لَّا يُحِبُّ اللَّهُ .......... مِنَ الْقَوْلِ إِلَّا مَن ظُلِمَ ۚ وَكَانَ اللَّهُ سَمِيعًا عَلِيمًا ﴾',
+                fullVerse: '﴿ لَّا يُحِبُّ اللَّهُ الْجَهْرَ بِالسُّوءِ مِنَ الْقَوْلِ إِلَّا مَن ظُلِمَ ۚ وَكَانَ اللَّهُ سَمِيعًا عَلِيمًا ﴾',
+                surah: 'سورة النساء - آية ١٤٨',
+                reflection: 'يبغض الله إشاعة الفاحشة والبذاءة والجهر بالكلام القبيح، إلا للمظلوم في حدود استرداد حقه.'
+            },
+            {
+                id: 15,
+                type: 'hates',
+                categoryText: 'الْمُسْرِفِينَ',
+                missingWord: 'الْمُسْرِفِينَ',
+                distractors: ['الْمُتَّقِينَ', 'الْمُحْسِنِينَ', 'الصَّابِرِينَ'],
+                verseWithBlank: '﴿ وَكُلُوا وَاشْرَبُوا وَلَا تُسْرِفُوا ۚ إِنَّهُ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَكُلُوا وَاشْرَبُوا وَلَا تُسْرِفُوا ۚ إِنَّهُ لَا يُحِبُّ الْمُسْرِفِينَ ﴾',
+                surah: 'سورة الأعراف - آية ٣١',
+                reflection: 'الإسراف وتجاوز الحد في المأكل والمشرب والإنفاق هدرٌ للنعم يبغضه الله تعالى.'
+            },
+            {
+                id: 16,
+                type: 'hates',
+                categoryText: 'الْخَائِنِينَ',
+                missingWord: 'الْخَائِنِينَ',
+                distractors: ['الْمُتَوَكِّلِينَ', 'الْمُقْسِطِينَ', 'التَّوَّابِينَ'],
+                verseWithBlank: '﴿ وَإِمَّا تَخَافَنَّ مِن قَوْمٍ خِيَانَةً فَانبِذْ إِلَيْهِمْ عَلَىٰ سَوَاءٍ ۚ إِنَّ اللَّهَ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَإِمَّا تَخَافَنَّ مِن قَوْمٍ خِيَانَةً فَانبِذْ إِلَيْهِمْ عَلَىٰ سَوَاءٍ ۚ إِنَّ اللَّهَ لَا يُحِبُّ الْخَائِنِينَ ﴾',
+                surah: 'سورة الأنفال - آية ٥٨',
+                reflection: 'الوضوح ونبذ الغدر حتى مع الأعداء من مبادئ الإسلام السامية، لأن الله لا يحب الخائنين.'
+            },
+            {
+                id: 17,
+                type: 'hates',
+                categoryText: 'الْمُسْتَكْبِرِينَ',
+                missingWord: 'الْمُسْتَكْبِرِينَ',
+                distractors: ['الْمُتَطَهِّرِينَ', 'الصَّابِرِينَ', 'الْمُحْسِنِينَ'],
+                verseWithBlank: '﴿ لَا جَرَمَ أَنَّ اللَّهَ يَعْلَمُ مَا يُسِرُّونَ وَمَا يُعْلِنُونَ ۚ إِنَّهُ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ لَا جَرَمَ أَنَّ اللَّهَ يَعْلَمُ مَا يُسِرُّونَ وَمَا يُعْلِنُونَ ۚ إِنَّهُ لَا يُحِبُّ الْمُسْتَكْبِرِينَ ﴾',
+                surah: 'سورة النحل - آية ٢٣',
+                reflection: 'الاستكبار عن الحق والتعالي على الخلق من أكبر موانع الهداية ومحبة الله.'
+            },
+            {
+                id: 18,
+                type: 'hates',
+                categoryText: 'كُلَّ خَوَّانٍ كَفُورٍ',
+                missingWord: 'خَوَّانٍ كَفُورٍ',
+                distractors: ['تَوَّابٍ شَكُورٍ', 'مُحْسِنٍ صَبُورٍ', 'عَادِلٍ غَفُورٍ'],
+                verseWithBlank: '﴿ إِنَّ اللَّهَ يُدَافِعُ عَنِ الَّذِينَ آمَنُوا ۗ إِنَّ اللَّهَ لَا يُحِبُّ كُلَّ .......... ﴾',
+                fullVerse: '﴿ إِنَّ اللَّهَ يُدَافِعُ عَنِ الَّذِينَ آمَنُوا ۗ إِنَّ اللَّهَ لَا يُحِبُّ كُلَّ خَوَّانٍ كَفُورٍ ﴾',
+                surah: 'سورة الحج - آية ٣٨',
+                reflection: 'الجمع بين خيانة الأمانة وكفران النعم صفة ذميمة تبعد صاحبها عن معية الله وحفظه.'
+            },
+            {
+                id: 19,
+                type: 'hates',
+                categoryText: 'الْفَرِحِينَ (البطرين بالنعمة)',
+                missingWord: 'الْفَرِحِينَ',
+                distractors: ['الْمُتَّقِينَ', 'الْمُقْسِطِينَ', 'الْمُتَوَكِّلِينَ'],
+                verseWithBlank: '﴿ إِذْ قَالَ لَهُ قَوْمُهُ لَا تَفْرَحْ ۖ إِنَّ اللَّهَ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ إِذْ قَالَ لَهُ قَوْمُهُ لَا تَفْرَحْ ۖ إِنَّ اللَّهَ لَا يُحِبُّ الْفَرِحِينَ ﴾',
+                surah: 'سورة القصص - آية ٧٦',
+                reflection: 'المقصود هنا فرح البَطَر والغرور بالمال والثروة كما فعل قارون، وليس الفرح المشروع بفضل الله.'
+            },
+            {
+                id: 20,
+                type: 'hates',
+                categoryText: 'الْمُفْسِدِينَ',
+                missingWord: 'الْمُفْسِدِينَ',
+                distractors: ['الْمُحْسِنِينَ', 'التَّوَّابِينَ', 'الصَّابِرِينَ'],
+                verseWithBlank: '﴿ وَلَا تَبْغِ الْفَسَادَ فِي الْأَرْضِ ۖ إِنَّ اللَّهَ لَا يُحِبُّ .......... ﴾',
+                fullVerse: '﴿ وَلَا تَبْغِ الْفَسَادَ فِي الْأَرْضِ ۖ إِنَّ اللَّهَ لَا يُحِبُّ الْمُفْسِدِينَ ﴾',
+                surah: 'سورة القصص - آية ٧٧',
+                reflection: 'الإنسان مأمور بالإصلاح والعمارة في الأرض، ومنهي عن كل صور الإفساد البيئي والأخلاقي والاجتماعي.'
+            }
+        ];
+
+        /**
+         * قائمة الأوسمة والجوائز التشجيعية
+         */
+        const BADGES_CONFIG = [
+            {
+                id: 'first_step',
+                title: 'بداية التدبر',
+                desc: 'أجبت عن أول سؤال قرآني إجابة صحيحة.',
+                icon: '🌱',
+                condition: (state) => state.correctCount >= 1
+            },
+            {
+                id: 'streak_3',
+                title: 'نجمة الفهم القرآني',
+                desc: 'حققت ٣ إجابات صحيحة متتالية دون خطأ.',
+                icon: '⭐',
+                condition: (state) => state.bestStreak >= 3
+            },
+            {
+                id: 'streak_6',
+                title: 'شعلة البصيرة',
+                desc: 'حققت ٦ إجابات صحيحة متتالية بإتقان.',
+                icon: '🔥',
+                condition: (state) => state.bestStreak >= 6
+            },
+            {
+                id: 'score_500',
+                title: 'وسام المتدبر',
+                desc: 'جمعت ٥٠٠ نقطة أو أكثر في رحلة التدبر.',
+                icon: '🏅',
+                condition: (state) => state.score >= 500
+            },
+            {
+                id: 'score_1000',
+                title: 'تاج الإحسان والتميّز',
+                desc: 'تجاوزت ١٠٠٠ نقطة في استحضار آيات المحبة.',
+                icon: '👑',
+                condition: (state) => state.score >= 1000
+            }
+        ];
+
+        // حالة اللعبة (Game State)
+        let gameState = {
+            selectedTotal: 12,
+            questions: [],
+            currentIndex: 0,
+            score: 0,
+            streak: 0,
+            bestStreak: 0,
+            correctCount: 0,
+            answeredHistory: [],
+            isAnswered: false,
+            soundEnabled: true,
+            unlockedBadges: new Set()
+        };
+
+        // محرك الصوت المدمج عبر Web Audio API (بدون روابط خارجية)
+        const AudioEngine = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            },
+            playCorrect() {
+                if (!gameState.soundEnabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                // نغمة صاعدة مبهجة (C5 -> E5 -> G5)
+                const notes = [523.25, 659.25, 783.99];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.09);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.09);
+                    osc.stop(now + idx * 0.09 + 0.36);
+                });
+            },
+            playWrong() {
+                if (!gameState.soundEnabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                // نغمة تنبيه هادئة منخفضة
+                const notes = [240, 195];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+                    gain.gain.setValueAtTime(0.16, now + idx * 0.14);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.14 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.14);
+                    osc.stop(now + idx * 0.14 + 0.32);
+                });
+            },
+            playFanfare() {
+                if (!gameState.soundEnabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.11);
+                    gain.gain.setValueAtTime(0.18, now + idx * 0.11);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.11 + 0.5);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.11);
+                    osc.stop(now + idx * 0.11 + 0.52);
+                });
+            }
+        };
+
+        // تبديل حالة الصوت
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            document.getElementById('sound-icon').textContent = gameState.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // اختيار عدد الأسئلة في شاشة البداية
+        function selectQuestionCount(count) {
+            gameState.selectedTotal = count;
+            document.querySelectorAll('.count-btn').forEach(btn => {
+                btn.classList.remove('border-emerald-600', 'bg-emerald-50', 'text-emerald-800', 'shadow-sm');
+                btn.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+            });
+            const activeBtn = document.getElementById(`count-btn-${count}`);
+            activeBtn.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+            activeBtn.classList.add('border-emerald-600', 'bg-emerald-50', 'text-emerald-800', 'shadow-sm');
+        }
+
+        // خلط عشوائي للمصفوفة (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // بدء اللعبة وتجهيز الأسئلة
+        function startGame() {
+            const shuffledPool = shuffleArray(QURAN_DATA).slice(0, gameState.selectedTotal);
+            const halfPoint = Math.ceil(shuffledPool.length / 2);
+
+            // تقسيم الأسئلة إلى مرحلتين: النصف الأول تصنيف (يحب / لا يحب)، والنصف الثاني إتمام الآية
+            gameState.questions = shuffledPool.map((item, idx) => ({
+                ...item,
+                mode: idx < halfPoint ? 'classify' : 'complete'
+            }));
+
+            gameState.currentIndex = 0;
+            gameState.score = 0;
+            gameState.streak = 0;
+            gameState.bestStreak = 0;
+            gameState.correctCount = 0;
+            gameState.answeredHistory = [];
+            gameState.isAnswered = false;
+
+            updateHeaderStats();
+            document.getElementById('header-stats').classList.remove('hidden');
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            renderQuestion();
+        }
+
+        // تحديث عدادات الشريط العلوي
+        function updateHeaderStats() {
+            document.getElementById('score-display').textContent = gameState.score;
+            document.getElementById('streak-display').textContent = gameState.streak;
+            document.getElementById('badges-count-badge').textContent = gameState.unlockedBadges.size;
+        }
+
+        // عرض السؤال الحالي
+        function renderQuestion() {
+            gameState.isAnswered = false;
+            const q = gameState.questions[gameState.currentIndex];
+            const total = gameState.questions.length;
+
+            // تحديث شريط التقدم ورقم السؤال
+            document.getElementById('current-q-num').textContent = gameState.currentIndex + 1;
+            document.getElementById('total-q-num').textContent = total;
+            const progressPercent = ((gameState.currentIndex) / total) * 100;
+            document.getElementById('progress-bar').style.width = `${Math.max(8, progressPercent)}%`;
+
+            // إعادة ضبط مظهر البطاقة
+            const card = document.getElementById('question-card');
+            card.className = 'bg-white rounded-3xl shadow-xl border-2 border-cream-200 p-6 sm:p-8 transition-colors duration-300 relative animate-enter';
+            document.getElementById('feedback-panel').classList.add('hidden');
+
+            const stageBadge = document.getElementById('stage-badge');
+            const instruction = document.getElementById('question-instruction');
+            const mainText = document.getElementById('question-main-text');
+            const subHint = document.getElementById('question-sub-hint');
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            if (q.mode === 'classify') {
+                // --- المرحلة الأولى: الميزان القرآني (إن الله يحب / لا يحب) ---
+                stageBadge.textContent = 'المرحلة الأولى: الميزان القرآني';
+                stageBadge.className = 'px-3 py-1 rounded-full bg-emerald-100 text-emerald-800';
+                instruction.textContent = 'في أي سياق قرآني وردت هذه الفئة أو الصفة؟';
+                mainText.textContent = `﴿ ${q.categoryText} ﴾`;
+                subHint.classList.add('hidden');
+
+                optionsContainer.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+
+                // زر: إن الله يحب
+                const btnLoves = document.createElement('button');
+                btnLoves.type = 'button';
+                btnLoves.onclick = () => handleAnswer('loves', btnLoves);
+                btnLoves.className = 'option-btn group p-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50/60 hover:bg-emerald-100 hover:border-emerald-500 transition flex items-center justify-center gap-3 text-emerald-950 font-extrabold text-lg sm:text-xl shadow-sm active:scale-95';
+                btnLoves.innerHTML = `
+                    <span class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg group-hover:scale-110 transition">💚</span>
+                    <span>إنَّ اللَّهَ يُحِبُّ...</span>
+                `;
+
+                // زر: إن الله لا يحب
+                const btnHates = document.createElement('button');
+                btnHates.type = 'button';
+                btnHates.onclick = () => handleAnswer('hates', btnHates);
+                btnHates.className = 'option-btn group p-5 rounded-2xl border-2 border-rose-200 bg-rose-50/60 hover:bg-rose-100 hover:border-rose-500 transition flex items-center justify-center gap-3 text-rose-950 font-extrabold text-lg sm:text-xl shadow-sm active:scale-95';
+                btnHates.innerHTML = `
+                    <span class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg group-hover:scale-110 transition">🚫</span>
+                    <span>إنَّ اللَّهَ لَا يُحِبُّ...</span>
+                `;
+
+                optionsContainer.appendChild(btnLoves);
+                optionsContainer.appendChild(btnHates);
+
+            } else {
+                // --- المرحلة الثانية: إتمام نص الآية القرآنية ---
+                stageBadge.textContent = 'المرحلة الثانية: إتمام الآيات الكريمة';
+                stageBadge.className = 'px-3 py-1 rounded-full bg-amber-100 text-amber-900';
+                instruction.textContent = 'اختر الكلمة القرآنية الصحيحة لإتمام الآية الكريمة:';
+                mainText.textContent = q.verseWithBlank;
+                subHint.textContent = `تلميح: وردت هذه الآية في ${q.surah.split('-')[0].trim()}`;
+                subHint.classList.remove('hidden');
+
+                optionsContainer.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3.5';
+
+                const allChoices = shuffleArray([q.missingWord, ...q.distractors]);
+                allChoices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.onclick = () => handleAnswer(choice, btn);
+                    btn.className = 'option-btn p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-amber-50 hover:border-amber-400 transition text-center quran-text font-bold text-xl sm:text-2xl text-slate-800 shadow-sm active:scale-95';
+                    btn.textContent = choice;
+                    optionsContainer.appendChild(btn);
+                });
+            }
+        }
+
+        // معالجة إجابة المستخدم
+        function handleAnswer(selectedValue, clickedBtn) {
+            if (gameState.isAnswered) return;
+            gameState.isAnswered = true;
+
+            const q = gameState.questions[gameState.currentIndex];
+            const isCorrect = (q.mode === 'classify')
+                ? (selectedValue === q.type)
+                : (selectedValue === q.missingWord);
+
+            // تعطيل جميع أزرار الخيارات
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+            });
+            clickedBtn.classList.remove('opacity-70');
+
+            const card = document.getElementById('question-card');
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const feedbackIcon = document.getElementById('feedback-icon');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const verseRef = document.getElementById('verse-reference');
+            const fullVerse = document.getElementById('full-verse-text');
+            const reflection = document.getElementById('verse-reflection');
+            const nextBtn = document.getElementById('next-btn');
+
+            // تحديث النص الكامل في صندوق السؤال
+            document.getElementById('question-main-text').textContent = q.fullVerse;
+            verseRef.textContent = q.surah;
+            fullVerse.textContent = q.fullVerse;
+            reflection.textContent = `💡 إضاءة تدبرية: ${q.reflection}`;
+
+            if (isCorrect) {
+                // --- حالة الإجابة الصحيحة (جوائز واحتفال) ---
+                AudioEngine.playCorrect();
+                gameState.correctCount++;
+                gameState.streak++;
+                if (gameState.streak > gameState.bestStreak) {
+                    gameState.bestStreak = gameState.streak;
+                }
+
+                // احتساب النقاط مع مكافأة التتابع
+                const bonus = (gameState.streak >= 3) ? 25 : 0;
+                const earned = 100 + bonus;
+                gameState.score += earned;
+
+                // تلوين البطاقة وزر الإجابة بالأخضر الزمردي
+                card.classList.remove('border-cream-200');
+                card.classList.add('border-emerald-500');
+                clickedBtn.classList.add('ring-4', 'ring-emerald-400', 'bg-emerald-100', 'border-emerald-600');
+
+                feedbackPanel.className = 'mt-6 rounded-2xl p-5 border-2 border-emerald-300 bg-emerald-50/90 text-emerald-950 animate-enter';
+                feedbackIcon.className = 'w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-sm';
+                feedbackIcon.textContent = '🌟';
+                feedbackTitle.textContent = bonus > 0
+                    ? `ممتاز! إجابة صحيحة (+${earned} نقطة مع مكافأة التتابع 🔥)`
+                    : `أحسنت! إجابة صحيحة (+${earned} نقطة)`;
+                feedbackTitle.className = 'font-extrabold text-lg text-emerald-900';
+
+                nextBtn.className = 'w-full sm:w-auto px-7 py-3 rounded-xl font-bold text-white bg-emerald-700 hover:bg-emerald-600 shadow-md active:scale-95 transition flex items-center justify-center gap-2 mr-auto';
+
+                // إطلاق قصاصات ذهبية مبهجة
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 55,
+                        spread: 65,
+                        origin: { y: 0.7 },
+                        colors: ['#10b981', '#f59e0b', '#fbbf24', '#059669']
+                    });
+                }
+
+                checkBadges();
+
+            } else {
+                // --- حالة الإجابة الخاطئة (إشارات تحذيرية واضحة وتصحيح لطيف) ---
+                AudioEngine.playWrong();
+                gameState.streak = 0;
+
+                // اهتزاز البطاقة وإطار تحذيري أحمر
+                card.classList.remove('border-cream-200');
+                card.classList.add('border-rose-500', 'animate-shake');
+                clickedBtn.classList.add('ring-4', 'ring-rose-400', 'bg-rose-100', 'border-rose-600');
+
+                feedbackPanel.className = 'mt-6 rounded-2xl p-5 border-2 border-rose-300 bg-rose-50/95 text-rose-950 animate-enter';
+                feedbackIcon.className = 'w-11 h-11 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-sm';
+                feedbackIcon.textContent = '⚠️';
+
+                const correctLabel = (q.mode === 'classify')
+                    ? (q.type === 'loves' ? 'إنَّ اللَّهَ يُحِبُّ' : 'إنَّ اللَّهَ لَا يُحِبُّ')
+                    : `« ${q.missingWord} »`;
+
+                feedbackTitle.textContent = `تنبيه! الإجابة الصحيحة هي: ${correctLabel}`;
+                feedbackTitle.className = 'font-extrabold text-lg text-rose-800';
+
+                nextBtn.className = 'w-full sm:w-auto px-7 py-3 rounded-xl font-bold text-white bg-rose-700 hover:bg-rose-600 shadow-md active:scale-95 transition flex items-center justify-center gap-2 mr-auto';
+            }
+
+            // حفظ السؤال في سجل المراجعة
+            gameState.answeredHistory.push({
+                verse: q.fullVerse,
+                surah: q.surah,
+                type: q.type,
+                isCorrect
+            });
+
+            // تحديث نص زر التالي في السؤال الأخير
+            if (gameState.currentIndex === gameState.questions.length - 1) {
+                nextBtn.innerHTML = '<span>عرض النتيجة والوسام المستحق</span><span>🏆</span>';
+            } else {
+                nextBtn.innerHTML = '<span>السؤال التالي</span><span>←</span>';
+            }
+
+            updateHeaderStats();
+            feedbackPanel.classList.remove('hidden');
+        }
+
+        // الانتقال للسؤال التالي أو إنهاء اللعبة
+        function nextQuestion() {
+            if (gameState.currentIndex < gameState.questions.length - 1) {
+                gameState.currentIndex++;
+                renderQuestion();
+            } else {
+                finishGame();
+            }
+        }
+
+        // التحقق من فتح أوسمة جديدة
+        function checkBadges() {
+            BADGES_CONFIG.forEach(badge => {
+                if (!gameState.unlockedBadges.has(badge.id) && badge.condition(gameState)) {
+                    gameState.unlockedBadges.add(badge.id);
+                    updateHeaderStats();
+                    showAchievementToast(badge);
+                }
+            });
+        }
+
+        // عرض إشعار منبثق عند الحصول على وسام
+        function showAchievementToast(badge) {
+            const toast = document.getElementById('achievement-toast');
+            document.getElementById('toast-icon').textContent = badge.icon;
+            document.getElementById('toast-title').textContent = badge.title;
+
+            toast.classList.remove('translate-y-32', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-32', 'opacity-0');
+            }, 3500);
+        }
+
+        // فتح / إغلاق نافذة الأوسمة
+        function toggleBadgesModal(show) {
+            const modal = document.getElementById('badges-modal');
+            if (show) {
+                renderBadgesList();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // عرض قائمة الأوسمة في النافذة
+        function renderBadgesList() {
+            const container = document.getElementById('badges-list-container');
+            container.innerHTML = '';
+
+            BADGES_CONFIG.forEach(badge => {
+                const isUnlocked = gameState.unlockedBadges.has(badge.id);
+                const item = document.createElement('div');
+                item.className = isUnlocked
+                    ? 'p-4 rounded-2xl border-2 border-gold-400 bg-amber-50/70 flex items-center gap-4'
+                    : 'p-4 rounded-2xl border border-slate-200 bg-slate-50 opacity-60 flex items-center gap-4 grayscale';
+
+                item.innerHTML = `
+                    <div class="w-12 h-12 rounded-2xl ${isUnlocked ? 'bg-gold-500 text-white shadow-md' : 'bg-slate-200 text-slate-500'} flex items-center justify-center text-2xl shrink-0">
+                        ${badge.icon}
+                    </div>
+                    <div class="flex-grow">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-extrabold text-slate-900 text-base">${badge.title}</h4>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${isUnlocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+                                ${isUnlocked ? 'مكتسب ✓' : 'مقفل 🔒'}
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-1">${badge.desc}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // شاشة النهاية وعرض النتيجة النهائية
+        function finishGame() {
+            AudioEngine.playFanfare();
+            document.getElementById('progress-bar').style.width = '100%';
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+
+            const total = gameState.questions.length;
+            const accuracy = Math.round((gameState.correctCount / total) * 100);
+
+            document.getElementById('final-score').textContent = gameState.score;
+            document.getElementById('final-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('final-best-streak').textContent = gameState.bestStreak;
+
+            // تحديد اللقب النهائي بناءً على نسبة الإتقان
+            const medalIcon = document.getElementById('final-medal-icon');
+            const rankTitle = document.getElementById('final-rank-title');
+            const rankDesc = document.getElementById('final-rank-desc');
+
+            if (accuracy >= 85) {
+                medalIcon.textContent = '👑';
+                rankTitle.textContent = 'تاج الإحسان والتميّز القرآني';
+                rankDesc.textContent = 'ما شاء الله! إتقان باهر واستحضار دقيق لصفات المحبوبين والمبغوضين في القرآن الكريم.';
+            } else if (accuracy >= 65) {
+                medalIcon.textContent = '🏅';
+                rankTitle.textContent = 'وسام المتدبر المجتهد';
+                rankDesc.textContent = 'أداء رائع ومبارك! لديك حصيلة طيبة في آيات المحبة، ومع القليل من المراجعة ستبلغ القمة.';
+            } else {
+                medalIcon.textContent = '🌟';
+                rankTitle.textContent = 'وسام طالب البصيرة';
+                rankDesc.textContent = 'بداية طيبة في رحلة التدبر! راجع الآيات أدناه وأعد الجولة لترسيخ معانيها في قلبك.';
+            }
+
+            // احتفالية كبرى عند النجاح
+            if (accuracy >= 60 && typeof confetti === 'function') {
+                confetti({
+                    particleCount: 110,
+                    spread: 85,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            // عرض قائمة الآيات للمراجعة
+            const reviewList = document.getElementById('review-list');
+            reviewList.innerHTML = '';
+            gameState.answeredHistory.forEach(item => {
+                const row = document.createElement('div');
+                row.className = `p-3.5 rounded-xl border ${item.isCorrect ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'} flex items-start justify-between gap-3`;
+                row.innerHTML = `
+                    <div>
+                        <p class="quran-text font-bold text-base sm:text-lg text-slate-900">${item.verse}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs text-slate-500 font-semibold">${item.surah}</span>
+                            <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${item.type === 'loves' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                ${item.type === 'loves' ? 'مما يحبه الله' : 'مما لا يحبه الله'}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="text-lg shrink-0" title="${item.isCorrect ? 'إجابة صحيحة' : 'تحتاج مراجعة'}">
+                        ${item.isCorrect ? '✅' : '⚠️'}
+                    </span>
+                `;
+                reviewList.appendChild(row);
+            });
+        }
+
+        // العودة لشاشة البداية لجولة جديدة
+        function resetToStart() {
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
